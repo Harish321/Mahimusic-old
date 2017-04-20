@@ -6,11 +6,10 @@ from django.db.models import Q
 from .forms import AlbumForm, SongForm, UserForm
 from .models import Album, Song
 
+
 AUDIO_FILE_TYPES = ['wav', 'mp3', 'ogg']
 IMAGE_FILE_TYPES = ['png', 'jpg', 'jpeg']
-from mutagen import File
-
-
+from mutagen import *
 def create_album(request):
     if not request.user.is_authenticated():
         return render(request, 'music/login.html')
@@ -51,6 +50,9 @@ def create_song(request, album_id):
                 }
                 return render(request, 'music/create_song.html', context)
         song = form.save(commit=False)
+        file = File(request.FILES['audio_file'])
+        song.song_title=file.tags['TIT2']
+        print file.tags['TALB']
         song.album = album
         song.audio_file = request.FILES['audio_file']
         file_type = song.audio_file.url.split('.')[-1]
@@ -145,10 +147,11 @@ def index(request):
         else:
             file = File('/home/acreddy/Desktop/ass.mp3') # mutagen can automatically detect format and type of tags
             artwork = file.tags['APIC:'].data # access APIC frame and grab the image
+            print file.tags['TALB']
             with open('/home/acreddy/Desktop/ass1.jpg', 'wb') as img:
                 img.write(artwork) # write artwork to new image
                 print "good"
-            return render(request, 'music/index.html', {'albums': albums,)
+            return render(request, 'music/index.html', {'albums': albums})
 
 
 def logout_user(request):
