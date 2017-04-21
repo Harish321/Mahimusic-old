@@ -53,7 +53,7 @@ def create_song(request, album_id):
         file = File(request.FILES['audio_file'])
         song.song_title=file.tags['TIT2']
         print file.tags['TALB']
-        if not Album.objects.filter(album_title=file.tags['TALB']):
+        if not Album.objects.filter(album_title=file.tags['TALB'],user=request.user):
             artwork = file.tags['APIC:'].data
             filename='/home/acreddy/Desktop/Mahimusic/media/'+str(file.tags['TIT2'])+'.jpg'
             with open(filename, 'wb') as img:
@@ -66,6 +66,7 @@ def create_song(request, album_id):
         song.audio_file = request.FILES['audio_file']
         file_type = song.audio_file.url.split('.')[-1]
         file_type = file_type.lower()
+        song.user = request.user
         if file_type not in AUDIO_FILE_TYPES:
             context = {
                 'album': album,
