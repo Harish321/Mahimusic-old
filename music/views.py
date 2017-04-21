@@ -62,7 +62,7 @@ def create_song(request, album_id):
             new=Album(album_title=file.tags['TALB'],user=request.user,album_logo=str(filename))
             new.save()
             #os.remove(filename)
-        song.album = Album.objects.get(album_title=file.tags['TALB'])
+        song.album = Album.objects.get(album_title=file.tags['TALB'],user=request.user)
         song.audio_file = request.FILES['audio_file']
         file_type = song.audio_file.url.split('.')[-1]
         file_type = file_type.lower()
@@ -138,7 +138,7 @@ def index(request):
     if not request.user.is_authenticated():
         return render(request, 'music/login.html')
     else:
-        albums = Album.objects.all()
+        albums = Album.objects.filter(user=request.user)
         song_results = Song.objects.all()
         query = request.GET.get("q")
         if query:
