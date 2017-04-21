@@ -16,8 +16,9 @@ class Album(models.Model):
 
 #For every song uploaded there will be a specific path like user/album/file.mp3
 def get_upload_path(instance, filename):
-    if not os.path.exists(str(instance.user.pk)+'/'+str(instance.album.album_title)):
-        os.makedirs(str(instance.user.pk)+'/'+str(instance.album.album_title))
+    #if not os.path.exists(str(instance.user.pk)+'/'+str(instance.album.album_title)):
+    #    os.makedirs(str(instance.user.pk)+'/'+str(instance.album.album_title))
+    print 1
     return str(instance.user.pk)+'/'+str(instance.album.album_title)+'/'+str(instance.song_title)+'.mp3'
 
 class Song(models.Model):

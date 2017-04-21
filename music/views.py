@@ -53,13 +53,34 @@ def create_song(request, album_id):
         file = File(request.FILES['audio_file'])
         song.song_title=file.tags['TIT2']
         print file.tags['TALB']
+        '''If album is created for the first time'''
         if not Album.objects.filter(album_title=file.tags['TALB'],user=request.user):
             artwork = file.tags['APIC:'].data
-            filename='/home/acreddy/Desktop/Mahimusic/media/'+str(file.tags['TIT2'])+'.jpg'
-            with open(filename, 'wb') as img:
+            '''
+            The below if condition takes care of first time upload
+            i.e
+            If there is no folder for the new user then it creates one
+            '''
+
+            if not os.path.exists('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)):
+                os.makedirs('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk))
+            
+
+            '''new folder for the album is created'''
+            os.makedirs('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file.tags['TALB']))
+            
+
+            '''creates a thumbnail for the album'''
+            filename='/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file.tags['TALB'])+'/'+str(file.tags['TALB'])+'.jpg'
+            with open(filename, 'w+') as img:
                 img.write(artwork) # write artwork to new image
-            filename=str(file.tags['TIT2'])+'.jpg'
-            new=Album(album_title=file.tags['TALB'],user=request.user,album_logo=str(filename))
+            
+
+            '''The below file name stores address .../..../media/filename'''
+            filename=str(request.user.pk)+'/'+str(file.tags['TALB'])+'/'+str(file.tags['TALB'])+'.jpg'
+            
+
+            new=Album(album_title=file.tags['TALB'],user=request.user,album_logo=filename)
             new.save()
             #os.remove(filename)
         song.album = Album.objects.get(album_title=file.tags['TALB'],user=request.user)
