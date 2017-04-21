@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 from .forms import AlbumForm, SongForm, UserForm
 from .models import Album, Song
-
+import os, sys
 
 AUDIO_FILE_TYPES = ['wav', 'mp3', 'ogg']
 IMAGE_FILE_TYPES = ['png', 'jpg', 'jpeg']
@@ -54,8 +54,14 @@ def create_song(request, album_id):
         song.song_title=file.tags['TIT2']
         print file.tags['TALB']
         if not Album.objects.filter(album_title=file.tags['TALB']):
-            new=Album(album_title=file.tags['TALB'],user=request.user,album_logo=file.tags['APIC:'].data)
+            artwork = file.tags['APIC:'].data
+            filename='/home/acreddy/Desktop/Mahimusic/media/'+str(file.tags['TIT2'])+'.jpg'
+            with open(filename, 'wb') as img:
+                img.write(artwork) # write artwork to new image
+            filename=str(file.tags['TIT2'])+'.jpg'
+            new=Album(album_title=file.tags['TALB'],user=request.user,album_logo=str(filename))
             new.save()
+            #os.remove(filename)
         song.album = Album.objects.get(album_title=file.tags['TALB'])
         song.audio_file = request.FILES['audio_file']
         file_type = song.audio_file.url.split('.')[-1]
