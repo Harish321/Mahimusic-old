@@ -40,6 +40,7 @@ def create_song(request, album_id):
     form = SongForm(request.POST or None, request.FILES or None)
     album = get_object_or_404(Album, pk=album_id)
     if form.is_valid():
+        file = File(request.FILES['audio_file'])
         albums_songs = album.song_set.all()
         for s in albums_songs:
             if s.song_title == form.cleaned_data.get("song_title"):
@@ -50,7 +51,6 @@ def create_song(request, album_id):
                 }
                 return render(request, 'music/create_song.html', context)
         song = form.save(commit=False)
-        file = File(request.FILES['audio_file'])
         song.song_title=file.tags['TIT2']
         print file.tags['TALB']
         '''If album is created for the first time'''
@@ -82,7 +82,19 @@ def create_song(request, album_id):
 
             new=Album(album_title=file.tags['TALB'],user=request.user,album_logo=filename)
             new.save()
-            #os.remove(filename)
+
+
+            '''If the album exists then below else statement checks if the uploaded is duplicate song or not'''
+        else:
+            if Song.objects.filter(user=request.user,album__album_title=file.tags['TALB'],song_title=file.tags['TIT2']):
+                context = {
+                    'album': album,
+                    'form': form,
+                    'error_message': 'You already added that song',
+                }
+                return render(request, 'music/create_song.html', context)
+
+                
         song.album = Album.objects.get(album_title=file.tags['TALB'],user=request.user)
         song.audio_file = request.FILES['audio_file']
         file_type = song.audio_file.url.split('.')[-1]
