@@ -41,6 +41,16 @@ def create_song(request, album_id):
     album = get_object_or_404(Album, pk=album_id)
     if form.is_valid():
         file = File(request.FILES['audio_file'])
+
+        '''IF there isn't any data about album in the mp3 it sets it to unknown'''
+        file_album_name=''
+        if 'TALB' in file:
+            file_album_name=file.tags['TALB']
+        else:
+            file_album_name='Unknown'
+
+
+
         albums_songs = album.song_set.all()
         for s in albums_songs:
             if s.song_title == form.cleaned_data.get("song_title"):
@@ -52,10 +62,8 @@ def create_song(request, album_id):
                 return render(request, 'music/create_song.html', context)
         song = form.save(commit=False)
         song.song_title=file.tags['TIT2']
-        print file.tags['TALB']
         '''If album is created for the first time'''
-        if not Album.objects.filter(album_title=file.tags['TALB'],user=request.user):
-            artwork = file.tags['APIC:'].data
+        if not Album.objects.filter(album_title=file_album_name,user=request.user):
             '''
             The below if condition takes care of first time upload
             i.e
@@ -67,26 +75,33 @@ def create_song(request, album_id):
             
 
             '''new folder for the album is created'''
-            os.makedirs('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file.tags['TALB']))
+            if not os.path.exists(('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file_album_name))):
+                os.makedirs('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file_album_name))
             
 
             '''creates a thumbnail for the album'''
-            filename='/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file.tags['TALB'])+'/'+str(file.tags['TALB'])+'.jpg'
-            with open(filename, 'w+') as img:
-                img.write(artwork) # write artwork to new image
-            
+            filename='default.jpg'#default image
+            if 'APIC:' in file:
+                artwork = file.tags['APIC:'].data
+                filename='/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
+                with open(filename, 'w+') as img:
+                    img.write(artwork) # write artwork to new image
+                
+                statinfo = os.stat(filename)#gives details of the image
+                if statinfo.st_size==0:
+                    '''If there is no image then we use default'''
+                    filename='default.jpg'
+                else:
+                    '''The below file name stores address .../..../media/filename'''
+                    filename=str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
 
-            '''The below file name stores address .../..../media/filename'''
-            filename=str(request.user.pk)+'/'+str(file.tags['TALB'])+'/'+str(file.tags['TALB'])+'.jpg'
-            
-
-            new=Album(album_title=file.tags['TALB'],user=request.user,album_logo=filename)
+            new=Album(album_title=file_album_name,user=request.user,album_logo=filename)
             new.save()
 
 
             '''If the album exists then below else statement checks if the uploaded is duplicate song or not'''
         else:
-            if Song.objects.filter(user=request.user,album__album_title=file.tags['TALB'],song_title=file.tags['TIT2']):
+            if Song.objects.filter(user=request.user,album__album_title=file_album_name,song_title=file.tags['TIT2']):
                 context = {
                     'album': album,
                     'form': form,
@@ -95,7 +110,7 @@ def create_song(request, album_id):
                 return render(request, 'music/create_song.html', context)
 
                 
-        song.album = Album.objects.get(album_title=file.tags['TALB'],user=request.user)
+        song.album = Album.objects.get(album_title=file_album_name,user=request.user)
         song.audio_file = request.FILES['audio_file']
         file_type = song.audio_file.url.split('.')[-1]
         file_type = file_type.lower()
@@ -190,7 +205,6 @@ def index(request):
         else:
             file = File('/home/acreddy/Desktop/ass.mp3') # mutagen can automatically detect format and type of tags
             artwork = file.tags['APIC:'].data # access APIC frame and grab the image
-            print file.tags['TALB']
             with open('/home/acreddy/Desktop/ass1.jpg', 'wb') as img:
                 img.write(artwork) # write artwork to new image
                 print "good"
