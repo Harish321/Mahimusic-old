@@ -1,10 +1,11 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import logout
 from django.http import JsonResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404,redirect
 from django.db.models import Q
 from .forms import AlbumForm, SongForm, UserForm
 from .models import Album, Song
+from django.http import HttpResponseRedirect
 import os, sys
 
 AUDIO_FILE_TYPES = ['wav', 'mp3', 'ogg']
@@ -36,9 +37,8 @@ def create_album(request):
         return render(request, 'music/create_album.html', context)
 
 
-def create_song(request, album_id):
+def create_song(request):
     form = SongForm(request.POST or None, request.FILES or None)
-    album = get_object_or_404(Album, pk=album_id)
     if form.is_valid():
         file = File(request.FILES['audio_file'])
 
@@ -51,15 +51,7 @@ def create_song(request, album_id):
 
 
 
-        albums_songs = album.song_set.all()
-        for s in albums_songs:
-            if s.song_title == form.cleaned_data.get("song_title"):
-                context = {
-                    'album': album,
-                    'form': form,
-                    'error_message': 'You already added that song',
-                }
-                return render(request, 'music/create_song.html', context)
+
         song = form.save(commit=False)
         song.song_title=file.tags['TIT2']
         '''If album is created for the first time'''
@@ -103,7 +95,6 @@ def create_song(request, album_id):
         else:
             if Song.objects.filter(user=request.user,album__album_title=file_album_name,song_title=file.tags['TIT2']):
                 context = {
-                    'album': album,
                     'form': form,
                     'error_message': 'You already added that song',
                 }
@@ -124,9 +115,8 @@ def create_song(request, album_id):
             return render(request, 'music/create_song.html', context)
 
         song.save()
-        return render(request, 'music/detail.html', {'album': album})
+        return HttpResponseRedirect('/') #redirects to the home page
     context = {
-        'album': album,
         'form': form,
     }
     return render(request, 'music/create_song.html', context)

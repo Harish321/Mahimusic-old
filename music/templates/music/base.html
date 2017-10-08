@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Viberr{% endblock %}</title>
+    <title>{% block title %}Mahimusic{% endblock %}</title>
     {% load staticfiles %}
     <link rel="shortcut icon" type="image/png" href="{%  static 'favicon.ico' %}"/>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
@@ -41,8 +41,8 @@
             </form>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a href="{% url 'music:create_album' %}">
-                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp; Add Album
+                    <a href="{% url 'music:create_song' %}">
+                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>&nbsp; Add Song
                     </a>
                 </li>
                 <li>
