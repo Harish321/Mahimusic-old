@@ -70,20 +70,20 @@ def create_song(request, album_id):
             If there is no folder for the new user then it creates one
             '''
 
-            if not os.path.exists('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)):
-                os.makedirs('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk))
+            if not os.path.exists('media/'+str(request.user.pk)):
+                os.makedirs('media/'+str(request.user.pk))
             
 
             '''new folder for the album is created'''
-            if not os.path.exists(('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file_album_name))):
-                os.makedirs('/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file_album_name))
+            if not os.path.exists(('media/'+str(request.user.pk)+'/'+str(file_album_name))):
+                os.makedirs('media/'+str(request.user.pk)+'/'+str(file_album_name))
             
 
             '''creates a thumbnail for the album'''
             filename='default.jpg'#default image
             if 'APIC:' in file:
                 artwork = file.tags['APIC:'].data
-                filename='/home/acreddy/Desktop/Mahimusic/media/'+str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
+                filename='media/'+str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
                 with open(filename, 'w+') as img:
                     img.write(artwork) # write artwork to new image
                 
@@ -203,11 +203,6 @@ def index(request):
                 'songs': song_results,
             })
         else:
-            file = File('/home/acreddy/Desktop/ass.mp3') # mutagen can automatically detect format and type of tags
-            artwork = file.tags['APIC:'].data # access APIC frame and grab the image
-            with open('/home/acreddy/Desktop/ass1.jpg', 'wb') as img:
-                img.write(artwork) # write artwork to new image
-                print "good"
             return render(request, 'music/index.html', {'albums': albums})
 
 
