@@ -36,85 +36,77 @@ def create_album(request):
         }
         return render(request, 'music/create_album.html', context)
 
+'''
+files variable stores all the uploaded files.
 
+'''
 def create_song(request):
     form = SongForm(request.POST or None, request.FILES or None)
     if form.is_valid():
-        file = File(request.FILES['audio_file'])
+        files = request.FILES.getlist('audio_file')
+        for a in files:
+            file = File(a)
+            
+            '''IF there isn't any data about album in the mp3 it sets it to unknown'''
+            file_album_name=''
+            if 'TALB' in file:
+                file_album_name=file.tags['TALB']
+            else:
+                file_album_name='Unknown'
+            
+            '''If album is created for the first time'''
+            if not Album.objects.filter(album_title=file_album_name,user=request.user):
+                '''
+                The below if condition takes care of first time upload
+                i.e
+                If there is no folder for the new user then it creates one
+                '''
 
-        '''IF there isn't any data about album in the mp3 it sets it to unknown'''
-        file_album_name=''
-        if 'TALB' in file:
-            file_album_name=file.tags['TALB']
-        else:
-            file_album_name='Unknown'
-
-
-
-
-        song = form.save(commit=False)
-        song.song_title=file.tags['TIT2']
-        '''If album is created for the first time'''
-        if not Album.objects.filter(album_title=file_album_name,user=request.user):
-            '''
-            The below if condition takes care of first time upload
-            i.e
-            If there is no folder for the new user then it creates one
-            '''
-
-            if not os.path.exists('media/'+str(request.user.pk)):
-                os.makedirs('media/'+str(request.user.pk))
+                if not os.path.exists('media/'+str(request.user.pk)):
+                    os.makedirs('media/'+str(request.user.pk))
             
 
-            '''new folder for the album is created'''
-            if not os.path.exists(('media/'+str(request.user.pk)+'/'+str(file_album_name))):
-                os.makedirs('media/'+str(request.user.pk)+'/'+str(file_album_name))
+                '''new folder for the album is created'''
+                if not os.path.exists(('media/'+str(request.user.pk)+'/'+str(file_album_name))):
+                    os.makedirs('media/'+str(request.user.pk)+'/'+str(file_album_name))
             
 
-            '''creates a thumbnail for the album'''
-            filename='default.jpg'#default image
-            if 'APIC:' in file:
-                artwork = file.tags['APIC:'].data
-                filename='media/'+str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
-                with open(filename, 'w+') as img:
-                    img.write(artwork) # write artwork to new image
+                '''creates a thumbnail for the album'''
+                filename='default.jpg'#default image
+                if 'APIC:' in file:
+                    artwork = file.tags['APIC:'].data
+                    filename='media/'+str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
+                    with open(filename, 'w+') as img:
+                        img.write(artwork) # write artwork to new image
                 
-                statinfo = os.stat(filename)#gives details of the image
-                if statinfo.st_size==0:
-                    '''If there is no image then we use default'''
-                    filename='default.jpg'
-                else:
-                    '''The below file name stores address .../..../media/filename'''
-                    filename=str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
+                    statinfo = os.stat(filename)#gives details of the image
+                    if statinfo.st_size==0:
+                        '''If there is no image then we use default'''
+                        filename='default.jpg'
+                    else:
+                        '''The below file name stores address .../..../media/filename'''
+                        filename=str(request.user.pk)+'/'+str(file_album_name)+'/'+str(file_album_name)+'.jpg'
 
-            new=Album(album_title=file_album_name,user=request.user,album_logo=filename)
-            new.save()
-
-
-            '''If the album exists then below else statement checks if the uploaded is duplicate song or not'''
-        else:
-            if Song.objects.filter(user=request.user,album__album_title=file_album_name,song_title=file.tags['TIT2']):
-                context = {
-                    'form': form,
-                    'error_message': 'You already added that song',
-                }
-                return render(request, 'music/create_song.html', context)
-
-                
-        song.album = Album.objects.get(album_title=file_album_name,user=request.user)
-        song.audio_file = request.FILES['audio_file']
-        file_type = song.audio_file.url.split('.')[-1]
-        file_type = file_type.lower()
-        song.user = request.user
-        if file_type not in AUDIO_FILE_TYPES:
-            context = {
-                'album': album,
-                'form': form,
-                'error_message': 'Audio file must be WAV, MP3, or OGG',
-            }
-            return render(request, 'music/create_song.html', context)
-
-        song.save()
+                new=Album(album_title=file_album_name,user=request.user,album_logo=filename)
+                new.save()
+                '''If the album exists then below else statement checks if the uploaded is duplicate song or not'''
+            else:
+                if Song.objects.filter(user=request.user,album__album_title=file_album_name,song_title=file.tags['TIT2']):
+                    context = {
+                        'form': form,
+                        'error_message': 'You already added that song',
+                    }
+                    return render(request, 'music/create_song.html', context)
+            
+            '''save the uploaded files to the file system and insert into database'''
+            song_title=file.tags['TIT2']
+            with open(str("media/"+str(request.user.pk)+"/"+str(file_album_name)+"/"+str(song_title)+".mp3"), 'wb+') as destination:
+                for chunk in a.chunks():
+                    destination.write(chunk)
+            upload_url = str(request.user.pk)+"/"+str(file_album_name)+"/"+str(song_title)+".mp3"
+            new_song = Song(user = request.user, album = Album.objects.get(album_title=file_album_name,user=request.user), song_title = song_title, audio_file = upload_url)
+            new_song.save()
+            
         return HttpResponseRedirect('/') #redirects to the home page
     context = {
         'form': form,

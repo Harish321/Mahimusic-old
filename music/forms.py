@@ -11,11 +11,8 @@ class AlbumForm(forms.ModelForm):
         fields = ['artist', 'album_title', 'genre', 'album_logo']
 
 
-class SongForm(forms.ModelForm):
-
-    class Meta:
-        model = Song
-        fields = [ 'audio_file']
+class SongForm(forms.Form):
+    audio_file = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}))
 
 
 class UserForm(forms.ModelForm):

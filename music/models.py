@@ -25,7 +25,7 @@ class Song(models.Model):
     user = models.ForeignKey(User,default=1)
     album = models.ForeignKey(Album, on_delete=models.CASCADE)
     song_title = models.CharField(max_length=250)
-    audio_file = models.FileField(upload_to=get_upload_path,default='')
+    audio_file = models.FileField(default='')
     is_favorite = models.BooleanField(default=False)
 
     def __str__(self):
